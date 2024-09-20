@@ -1,37 +1,113 @@
-<html>
+<!DOCTYPE html>
+<html lang="en-us">
   <head>
     <title>Fun WithPanels</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      .panel {
+        border: 2px solid blue;
+        margin: 5px;
+      }
+      .instance {
+        border: 1px solid black;
+        margin: 5px;
+      }
+    </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script>
       var schedules;
+      const panelnames = [];
       const panels = [];
       const chosen = [];
       const rejected = [];
+      function render_stage() {
+        $.each(panels, function (index, panel) {
+          var html = "";
+          html =
+            "<div class='card' style='margin-bottom:5px;' data-index='" +
+            panel.index +
+            "'><div class='card-body'>" +
+            "<h2 class='card-title'>" +
+            panel.title +
+            "</h2>" +
+            "<button type='button' class='btn btn-success' style='margin:5px;' data-index='" +
+            panel.index +
+            "'>Choose</button>" +
+            "<button type='button' class='btn btn-danger' data-index='" +
+            panel.index +
+            "'>Reject</button>" +
+            "<p class=card-text>" +
+            panel.description +
+            "</p>";
+
+          $.each(panel.instances, function (index, instance) {
+            html +=
+              "<div class='instance'> Start: " +
+              instance.start_time +
+              " End: " +
+              instance.end_time +
+              " Location: " +
+              instance.location +
+              "</div>";
+          });
+          html += "</div></div>";
+          //alert(html);
+          $("#stage").append(html);
+        });
+      }
       $(document).ready(function () {
         $.getJSON(
           "https://register.growtix.com/api/schedules?key=0a00c84d-7546-45e1-a596-96594b5cc463",
           function (jd) {
-            $("#stage").html("<p> Name: " + jd.event_name + "</p>");
             schedules = jd.schedules.sort((a, b) =>
               a.title.localeCompare(b.title)
             );
+            var tmppanel = {};
+            $.each(schedules, function (index, panel) {
+              if (panelnames.indexOf(panel.title) == -1) {
+                if (
+                  Object.entries(tmppanel).length === 0 &&
+                  panels.length === 0
+                ) {
+                  console.log("Starting Panel Ingest");
+                } else {
+                  panels.push(tmppanel);
+                  tmppanel = {};
+                }
+                panelnames.push(panel.title);
+                tmppanel.index = panels.length;
+                tmppanel.title = panel.title;
+                tmppanel.description = panel.description;
+                tmppanel.instances = [];
+                var tmpinstance = {};
+                tmpinstance.start_time = panel.start_time;
+                tmpinstance.end_time = panel.end_time;
+                tmpinstance.location = panel.location;
+                tmppanel.instances.push(tmpinstance);
+                // create the panel
+              } else {
+                var tmpinstance = {};
+                tmpinstance.start_time = panel.start_time;
+                tmpinstance.end_time = panel.end_time;
+                tmpinstance.location = panel.location;
+                tmppanel.instances.push(tmpinstance);
+              }
+              //console.log(panels.indexOf(panel.title));
+            });
+            console.log(panels);
+            render_stage();
           }
         );
-        $("#driver").click(function (event) {
-          $.each(schedules, function (index, panel) {
-            if (panels.indexOf(panel.title) == -1) {
-              panels.push(panel.title);
-              $("#stage").append(
-                "<div class='panel-item'><a href='#' class='reject'>X</a> <strong>" +
-                  panel.title +
-                  "</strong> <a href='#' class='choose'>+</a><br><p>" +
-                  panel.description +
-                  "</p></div>"
-              );
-            }
-            //console.log(panels.indexOf(panel.title));
-          });
-        });
         $("#stage").on("click", ".reject", function (e) {
           e.preventDefault();
           console.log($(this).parent().html());
@@ -52,354 +128,415 @@
     </script>
   </head>
   <body>
-    <p>Click on the button to load result.html file:</p>
+    <div class="container-fluid">
+      <div class="accordion" id="accordionExample">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button
+              class="accordion-button"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#collapseOne"
+              aria-expanded="true"
+              aria-controls="collapseOne"
+            >
+              Panels
+            </button>
+          </h2>
+          <div
+            id="collapseOne"
+            class="accordion-collapse collapse show"
+            data-bs-parent="#accordionExample"
+          >
+            <div class="accordion-body">
+              <div id="stage"></div>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button
+              class="accordion-button collapsed"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#collapseTwo"
+              aria-expanded="false"
+              aria-controls="collapseTwo"
+            >
+              Rejected
+            </button>
+          </h2>
+          <div
+            id="collapseTwo"
+            class="accordion-collapse collapse"
+            data-bs-parent="#accordionExample"
+          >
+            <div class="accordion-body">
+              <div id="rejected" style="background-color: #c00">REJECTED</div>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button
+              class="accordion-button collapsed"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#collapseThree"
+              aria-expanded="false"
+              aria-controls="collapseThree"
+            >
+              Chosen
+            </button>
+          </h2>
+          <div
+            id="collapseThree"
+            class="accordion-collapse collapse"
+            data-bs-parent="#accordionExample"
+          >
+            <div class="accordion-body">
+              <div id="chosen" style="background-color: #0c0">CHOSEN</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <div id="stage" style="background-color: #cc0">STAGE</div>
-    <div id="chosen" style="background-color: #0c0">CHOSEN</div>
-    <div id="rejected" style="background-color: #c00">REJECTED</div>
-    <input type="button" id="driver" value="Load Data" />
-    <div id="cal">
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Schedule Table</title>
-          <style>
-            table {
-              border-collapse: collapse;
-              width: 100%;
-            }
-            th,
-            td {
-              border: 1px solid #999;
-              padding: 5px;
-              text-align: center;
-            }
-            th {
-              background-color: #f2f2f2;
-            }
-            .day-header {
-              text-align: left;
-            }
-          </style>
-        </head>
-        <body>
-          <table>
-            <thead>
-              <tr>
-                <th></th>
-                <!-- Time Slots -->
-                <th>9:00 AM</th>
-                <th>9:15 AM</th>
-                <th>9:30 AM</th>
-                <th>9:45 AM</th>
-                <th>10:00 AM</th>
-                <th>10:15 AM</th>
-                <th>10:30 AM</th>
-                <th>10:45 AM</th>
-                <th>11:00 AM</th>
-                <th>11:15 AM</th>
-                <th>11:30 AM</th>
-                <th>11:45 AM</th>
-                <th>12:00 PM</th>
-                <th>12:15 PM</th>
-                <th>12:30 PM</th>
-                <th>12:45 PM</th>
-                <th>1:00 PM</th>
-                <th>1:15 PM</th>
-                <th>1:30 PM</th>
-                <th>1:45 PM</th>
-                <th>2:00 PM</th>
-                <th>2:15 PM</th>
-                <th>2:30 PM</th>
-                <th>2:45 PM</th>
-                <th>3:00 PM</th>
-                <th>3:15 PM</th>
-                <th>3:30 PM</th>
-                <th>3:45 PM</th>
-                <th>4:00 PM</th>
-                <th>4:15 PM</th>
-                <th>4:30 PM</th>
-                <th>4:45 PM</th>
-                <th>5:00 PM</th>
-                <th>5:15 PM</th>
-                <th>5:30 PM</th>
-                <th>5:45 PM</th>
-                <th>6:00 PM</th>
-                <th>6:15 PM</th>
-                <th>6:30 PM</th>
-                <th>6:45 PM</th>
-                <th>7:00 PM</th>
-                <th>7:15 PM</th>
-                <th>7:30 PM</th>
-                <th>7:45 PM</th>
-                <th>8:00 PM</th>
-                <th>8:15 PM</th>
-                <th>8:30 PM</th>
-                <th>8:45 PM</th>
-                <th>9:00 PM</th>
-                <th>9:15 PM</th>
-                <th>9:30 PM</th>
-                <th>9:45 PM</th>
-                <th>10:00 PM</th>
-                <th>10:15 PM</th>
-                <th>10:30 PM</th>
-                <th>10:45 PM</th>
-                <th>11:00 PM</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Thursday Row -->
-              <tr>
-                <th class="day-header">Thursday</th>
-                <!-- Thursday Time Slots -->
-                <td id="Thursday-0900"></td>
-                <td id="Thursday-0915"></td>
-                <td id="Thursday-0930"></td>
-                <td id="Thursday-0945"></td>
-                <td id="Thursday-1000"></td>
-                <td id="Thursday-1015"></td>
-                <td id="Thursday-1030"></td>
-                <td id="Thursday-1045"></td>
-                <td id="Thursday-1100"></td>
-                <td id="Thursday-1115"></td>
-                <td id="Thursday-1130"></td>
-                <td id="Thursday-1145"></td>
-                <td id="Thursday-1200"></td>
-                <td id="Thursday-1215"></td>
-                <td id="Thursday-1230"></td>
-                <td id="Thursday-1245"></td>
-                <td id="Thursday-1300"></td>
-                <td id="Thursday-1315"></td>
-                <td id="Thursday-1330"></td>
-                <td id="Thursday-1345"></td>
-                <td id="Thursday-1400"></td>
-                <td id="Thursday-1415"></td>
-                <td id="Thursday-1430"></td>
-                <td id="Thursday-1445"></td>
-                <td id="Thursday-1500"></td>
-                <td id="Thursday-1515"></td>
-                <td id="Thursday-1530"></td>
-                <td id="Thursday-1545"></td>
-                <td id="Thursday-1600"></td>
-                <td id="Thursday-1615"></td>
-                <td id="Thursday-1630"></td>
-                <td id="Thursday-1645"></td>
-                <td id="Thursday-1700"></td>
-                <td id="Thursday-1715"></td>
-                <td id="Thursday-1730"></td>
-                <td id="Thursday-1745"></td>
-                <td id="Thursday-1800"></td>
-                <td id="Thursday-1815"></td>
-                <td id="Thursday-1830"></td>
-                <td id="Thursday-1845"></td>
-                <td id="Thursday-1900"></td>
-                <td id="Thursday-1915"></td>
-                <td id="Thursday-1930"></td>
-                <td id="Thursday-1945"></td>
-                <td id="Thursday-2000"></td>
-                <td id="Thursday-2015"></td>
-                <td id="Thursday-2030"></td>
-                <td id="Thursday-2045"></td>
-                <td id="Thursday-2100"></td>
-                <td id="Thursday-2115"></td>
-                <td id="Thursday-2130"></td>
-                <td id="Thursday-2145"></td>
-                <td id="Thursday-2200"></td>
-                <td id="Thursday-2215"></td>
-                <td id="Thursday-2230"></td>
-                <td id="Thursday-2245"></td>
-                <td id="Thursday-2300"></td>
-              </tr>
-              <!-- Friday Row -->
-              <tr>
-                <th class="day-header">Friday</th>
-                <!-- Friday Time Slots -->
-                <td id="Friday-0900"></td>
-                <td id="Friday-0915"></td>
-                <td id="Friday-0930"></td>
-                <td id="Friday-0945"></td>
-                <td id="Friday-1000"></td>
-                <td id="Friday-1015"></td>
-                <td id="Friday-1030"></td>
-                <td id="Friday-1045"></td>
-                <td id="Friday-1100"></td>
-                <td id="Friday-1115"></td>
-                <td id="Friday-1130"></td>
-                <td id="Friday-1145"></td>
-                <td id="Friday-1200"></td>
-                <td id="Friday-1215"></td>
-                <td id="Friday-1230"></td>
-                <td id="Friday-1245"></td>
-                <td id="Friday-1300"></td>
-                <td id="Friday-1315"></td>
-                <td id="Friday-1330"></td>
-                <td id="Friday-1345"></td>
-                <td id="Friday-1400"></td>
-                <td id="Friday-1415"></td>
-                <td id="Friday-1430"></td>
-                <td id="Friday-1445"></td>
-                <td id="Friday-1500"></td>
-                <td id="Friday-1515"></td>
-                <td id="Friday-1530"></td>
-                <td id="Friday-1545"></td>
-                <td id="Friday-1600"></td>
-                <td id="Friday-1615"></td>
-                <td id="Friday-1630"></td>
-                <td id="Friday-1645"></td>
-                <td id="Friday-1700"></td>
-                <td id="Friday-1715"></td>
-                <td id="Friday-1730"></td>
-                <td id="Friday-1745"></td>
-                <td id="Friday-1800"></td>
-                <td id="Friday-1815"></td>
-                <td id="Friday-1830"></td>
-                <td id="Friday-1845"></td>
-                <td id="Friday-1900"></td>
-                <td id="Friday-1915"></td>
-                <td id="Friday-1930"></td>
-                <td id="Friday-1945"></td>
-                <td id="Friday-2000"></td>
-                <td id="Friday-2015"></td>
-                <td id="Friday-2030"></td>
-                <td id="Friday-2045"></td>
-                <td id="Friday-2100"></td>
-                <td id="Friday-2115"></td>
-                <td id="Friday-2130"></td>
-                <td id="Friday-2145"></td>
-                <td id="Friday-2200"></td>
-                <td id="Friday-2215"></td>
-                <td id="Friday-2230"></td>
-                <td id="Friday-2245"></td>
-                <td id="Friday-2300"></td>
-              </tr>
-              <!-- Saturday Row -->
-              <tr>
-                <th class="day-header">Saturday</th>
-                <!-- Saturday Time Slots -->
-                <td id="Saturday-0900"></td>
-                <td id="Saturday-0915"></td>
-                <td id="Saturday-0930"></td>
-                <td id="Saturday-0945"></td>
-                <td id="Saturday-1000"></td>
-                <td id="Saturday-1015"></td>
-                <td id="Saturday-1030"></td>
-                <td id="Saturday-1045"></td>
-                <td id="Saturday-1100"></td>
-                <td id="Saturday-1115"></td>
-                <td id="Saturday-1130"></td>
-                <td id="Saturday-1145"></td>
-                <td id="Saturday-1200"></td>
-                <td id="Saturday-1215"></td>
-                <td id="Saturday-1230"></td>
-                <td id="Saturday-1245"></td>
-                <td id="Saturday-1300"></td>
-                <td id="Saturday-1315"></td>
-                <td id="Saturday-1330"></td>
-                <td id="Saturday-1345"></td>
-                <td id="Saturday-1400"></td>
-                <td id="Saturday-1415"></td>
-                <td id="Saturday-1430"></td>
-                <td id="Saturday-1445"></td>
-                <td id="Saturday-1500"></td>
-                <td id="Saturday-1515"></td>
-                <td id="Saturday-1530"></td>
-                <td id="Saturday-1545"></td>
-                <td id="Saturday-1600"></td>
-                <td id="Saturday-1615"></td>
-                <td id="Saturday-1630"></td>
-                <td id="Saturday-1645"></td>
-                <td id="Saturday-1700"></td>
-                <td id="Saturday-1715"></td>
-                <td id="Saturday-1730"></td>
-                <td id="Saturday-1745"></td>
-                <td id="Saturday-1800"></td>
-                <td id="Saturday-1815"></td>
-                <td id="Saturday-1830"></td>
-                <td id="Saturday-1845"></td>
-                <td id="Saturday-1900"></td>
-                <td id="Saturday-1915"></td>
-                <td id="Saturday-1930"></td>
-                <td id="Saturday-1945"></td>
-                <td id="Saturday-2000"></td>
-                <td id="Saturday-2015"></td>
-                <td id="Saturday-2030"></td>
-                <td id="Saturday-2045"></td>
-                <td id="Saturday-2100"></td>
-                <td id="Saturday-2115"></td>
-                <td id="Saturday-2130"></td>
-                <td id="Saturday-2145"></td>
-                <td id="Saturday-2200"></td>
-                <td id="Saturday-2215"></td>
-                <td id="Saturday-2230"></td>
-                <td id="Saturday-2245"></td>
-                <td id="Saturday-2300"></td>
-              </tr>
-              <!-- Sunday Row -->
-              <tr>
-                <th class="day-header">Sunday</th>
-                <!-- Sunday Time Slots -->
-                <td id="Sunday-0900"></td>
-                <td id="Sunday-0915"></td>
-                <td id="Sunday-0930"></td>
-                <td id="Sunday-0945"></td>
-                <td id="Sunday-1000"></td>
-                <td id="Sunday-1015"></td>
-                <td id="Sunday-1030"></td>
-                <td id="Sunday-1045"></td>
-                <td id="Sunday-1100"></td>
-                <td id="Sunday-1115"></td>
-                <td id="Sunday-1130"></td>
-                <td id="Sunday-1145"></td>
-                <td id="Sunday-1200"></td>
-                <td id="Sunday-1215"></td>
-                <td id="Sunday-1230"></td>
-                <td id="Sunday-1245"></td>
-                <td id="Sunday-1300"></td>
-                <td id="Sunday-1315"></td>
-                <td id="Sunday-1330"></td>
-                <td id="Sunday-1345"></td>
-                <td id="Sunday-1400"></td>
-                <td id="Sunday-1415"></td>
-                <td id="Sunday-1430"></td>
-                <td id="Sunday-1445"></td>
-                <td id="Sunday-1500"></td>
-                <td id="Sunday-1515"></td>
-                <td id="Sunday-1530"></td>
-                <td id="Sunday-1545"></td>
-                <td id="Sunday-1600"></td>
-                <td id="Sunday-1615"></td>
-                <td id="Sunday-1630"></td>
-                <td id="Sunday-1645"></td>
-                <td id="Sunday-1700"></td>
-                <td id="Sunday-1715"></td>
-                <td id="Sunday-1730"></td>
-                <td id="Sunday-1745"></td>
-                <td id="Sunday-1800"></td>
-                <td id="Sunday-1815"></td>
-                <td id="Sunday-1830"></td>
-                <td id="Sunday-1845"></td>
-                <td id="Sunday-1900"></td>
-                <td id="Sunday-1915"></td>
-                <td id="Sunday-1930"></td>
-                <td id="Sunday-1945"></td>
-                <td id="Sunday-2000"></td>
-                <td id="Sunday-2015"></td>
-                <td id="Sunday-2030"></td>
-                <td id="Sunday-2045"></td>
-                <td id="Sunday-2100"></td>
-                <td id="Sunday-2115"></td>
-                <td id="Sunday-2130"></td>
-                <td id="Sunday-2145"></td>
-                <td id="Sunday-2200"></td>
-                <td id="Sunday-2215"></td>
-                <td id="Sunday-2230"></td>
-                <td id="Sunday-2245"></td>
-                <td id="Sunday-2300"></td>
-              </tr>
-            </tbody>
-          </table>
-        </body>
-      </html>
+      <div id="cal">
+        <style>
+          table {
+            border-collapse: collapse;
+            width: 100%;
+          }
+          th,
+          td {
+            border: 1px solid #999;
+            padding: 5px;
+            text-align: center;
+          }
+          th {
+            background-color: #f2f2f2;
+          }
+          .day-header {
+            text-align: left;
+          }
+        </style>
+
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <!-- Time Slots -->
+              <th>9:00 AM</th>
+              <th>9:15 AM</th>
+              <th>9:30 AM</th>
+              <th>9:45 AM</th>
+              <th>10:00 AM</th>
+              <th>10:15 AM</th>
+              <th>10:30 AM</th>
+              <th>10:45 AM</th>
+              <th>11:00 AM</th>
+              <th>11:15 AM</th>
+              <th>11:30 AM</th>
+              <th>11:45 AM</th>
+              <th>12:00 PM</th>
+              <th>12:15 PM</th>
+              <th>12:30 PM</th>
+              <th>12:45 PM</th>
+              <th>1:00 PM</th>
+              <th>1:15 PM</th>
+              <th>1:30 PM</th>
+              <th>1:45 PM</th>
+              <th>2:00 PM</th>
+              <th>2:15 PM</th>
+              <th>2:30 PM</th>
+              <th>2:45 PM</th>
+              <th>3:00 PM</th>
+              <th>3:15 PM</th>
+              <th>3:30 PM</th>
+              <th>3:45 PM</th>
+              <th>4:00 PM</th>
+              <th>4:15 PM</th>
+              <th>4:30 PM</th>
+              <th>4:45 PM</th>
+              <th>5:00 PM</th>
+              <th>5:15 PM</th>
+              <th>5:30 PM</th>
+              <th>5:45 PM</th>
+              <th>6:00 PM</th>
+              <th>6:15 PM</th>
+              <th>6:30 PM</th>
+              <th>6:45 PM</th>
+              <th>7:00 PM</th>
+              <th>7:15 PM</th>
+              <th>7:30 PM</th>
+              <th>7:45 PM</th>
+              <th>8:00 PM</th>
+              <th>8:15 PM</th>
+              <th>8:30 PM</th>
+              <th>8:45 PM</th>
+              <th>9:00 PM</th>
+              <th>9:15 PM</th>
+              <th>9:30 PM</th>
+              <th>9:45 PM</th>
+              <th>10:00 PM</th>
+              <th>10:15 PM</th>
+              <th>10:30 PM</th>
+              <th>10:45 PM</th>
+              <th>11:00 PM</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Thursday Row -->
+            <tr>
+              <th class="day-header">Thursday</th>
+              <!-- Thursday Time Slots -->
+              <td id="Thursday-0900"></td>
+              <td id="Thursday-0915"></td>
+              <td id="Thursday-0930"></td>
+              <td id="Thursday-0945"></td>
+              <td id="Thursday-1000"></td>
+              <td id="Thursday-1015"></td>
+              <td id="Thursday-1030"></td>
+              <td id="Thursday-1045"></td>
+              <td id="Thursday-1100"></td>
+              <td id="Thursday-1115"></td>
+              <td id="Thursday-1130"></td>
+              <td id="Thursday-1145"></td>
+              <td id="Thursday-1200"></td>
+              <td id="Thursday-1215"></td>
+              <td id="Thursday-1230"></td>
+              <td id="Thursday-1245"></td>
+              <td id="Thursday-1300"></td>
+              <td id="Thursday-1315"></td>
+              <td id="Thursday-1330"></td>
+              <td id="Thursday-1345"></td>
+              <td id="Thursday-1400"></td>
+              <td id="Thursday-1415"></td>
+              <td id="Thursday-1430"></td>
+              <td id="Thursday-1445"></td>
+              <td id="Thursday-1500"></td>
+              <td id="Thursday-1515"></td>
+              <td id="Thursday-1530"></td>
+              <td id="Thursday-1545"></td>
+              <td id="Thursday-1600"></td>
+              <td id="Thursday-1615"></td>
+              <td id="Thursday-1630"></td>
+              <td id="Thursday-1645"></td>
+              <td id="Thursday-1700"></td>
+              <td id="Thursday-1715"></td>
+              <td id="Thursday-1730"></td>
+              <td id="Thursday-1745"></td>
+              <td id="Thursday-1800"></td>
+              <td id="Thursday-1815"></td>
+              <td id="Thursday-1830"></td>
+              <td id="Thursday-1845"></td>
+              <td id="Thursday-1900"></td>
+              <td id="Thursday-1915"></td>
+              <td id="Thursday-1930"></td>
+              <td id="Thursday-1945"></td>
+              <td id="Thursday-2000"></td>
+              <td id="Thursday-2015"></td>
+              <td id="Thursday-2030"></td>
+              <td id="Thursday-2045"></td>
+              <td id="Thursday-2100"></td>
+              <td id="Thursday-2115"></td>
+              <td id="Thursday-2130"></td>
+              <td id="Thursday-2145"></td>
+              <td id="Thursday-2200"></td>
+              <td id="Thursday-2215"></td>
+              <td id="Thursday-2230"></td>
+              <td id="Thursday-2245"></td>
+              <td id="Thursday-2300"></td>
+            </tr>
+            <!-- Friday Row -->
+            <tr>
+              <th class="day-header">Friday</th>
+              <!-- Friday Time Slots -->
+              <td id="Friday-0900"></td>
+              <td id="Friday-0915"></td>
+              <td id="Friday-0930"></td>
+              <td id="Friday-0945"></td>
+              <td id="Friday-1000"></td>
+              <td id="Friday-1015"></td>
+              <td id="Friday-1030"></td>
+              <td id="Friday-1045"></td>
+              <td id="Friday-1100"></td>
+              <td id="Friday-1115"></td>
+              <td id="Friday-1130"></td>
+              <td id="Friday-1145"></td>
+              <td id="Friday-1200"></td>
+              <td id="Friday-1215"></td>
+              <td id="Friday-1230"></td>
+              <td id="Friday-1245"></td>
+              <td id="Friday-1300"></td>
+              <td id="Friday-1315"></td>
+              <td id="Friday-1330"></td>
+              <td id="Friday-1345"></td>
+              <td id="Friday-1400"></td>
+              <td id="Friday-1415"></td>
+              <td id="Friday-1430"></td>
+              <td id="Friday-1445"></td>
+              <td id="Friday-1500"></td>
+              <td id="Friday-1515"></td>
+              <td id="Friday-1530"></td>
+              <td id="Friday-1545"></td>
+              <td id="Friday-1600"></td>
+              <td id="Friday-1615"></td>
+              <td id="Friday-1630"></td>
+              <td id="Friday-1645"></td>
+              <td id="Friday-1700"></td>
+              <td id="Friday-1715"></td>
+              <td id="Friday-1730"></td>
+              <td id="Friday-1745"></td>
+              <td id="Friday-1800"></td>
+              <td id="Friday-1815"></td>
+              <td id="Friday-1830"></td>
+              <td id="Friday-1845"></td>
+              <td id="Friday-1900"></td>
+              <td id="Friday-1915"></td>
+              <td id="Friday-1930"></td>
+              <td id="Friday-1945"></td>
+              <td id="Friday-2000"></td>
+              <td id="Friday-2015"></td>
+              <td id="Friday-2030"></td>
+              <td id="Friday-2045"></td>
+              <td id="Friday-2100"></td>
+              <td id="Friday-2115"></td>
+              <td id="Friday-2130"></td>
+              <td id="Friday-2145"></td>
+              <td id="Friday-2200"></td>
+              <td id="Friday-2215"></td>
+              <td id="Friday-2230"></td>
+              <td id="Friday-2245"></td>
+              <td id="Friday-2300"></td>
+            </tr>
+            <!-- Saturday Row -->
+            <tr>
+              <th class="day-header">Saturday</th>
+              <!-- Saturday Time Slots -->
+              <td id="Saturday-0900"></td>
+              <td id="Saturday-0915"></td>
+              <td id="Saturday-0930"></td>
+              <td id="Saturday-0945"></td>
+              <td id="Saturday-1000"></td>
+              <td id="Saturday-1015"></td>
+              <td id="Saturday-1030"></td>
+              <td id="Saturday-1045"></td>
+              <td id="Saturday-1100"></td>
+              <td id="Saturday-1115"></td>
+              <td id="Saturday-1130"></td>
+              <td id="Saturday-1145"></td>
+              <td id="Saturday-1200"></td>
+              <td id="Saturday-1215"></td>
+              <td id="Saturday-1230"></td>
+              <td id="Saturday-1245"></td>
+              <td id="Saturday-1300"></td>
+              <td id="Saturday-1315"></td>
+              <td id="Saturday-1330"></td>
+              <td id="Saturday-1345"></td>
+              <td id="Saturday-1400"></td>
+              <td id="Saturday-1415"></td>
+              <td id="Saturday-1430"></td>
+              <td id="Saturday-1445"></td>
+              <td id="Saturday-1500"></td>
+              <td id="Saturday-1515"></td>
+              <td id="Saturday-1530"></td>
+              <td id="Saturday-1545"></td>
+              <td id="Saturday-1600"></td>
+              <td id="Saturday-1615"></td>
+              <td id="Saturday-1630"></td>
+              <td id="Saturday-1645"></td>
+              <td id="Saturday-1700"></td>
+              <td id="Saturday-1715"></td>
+              <td id="Saturday-1730"></td>
+              <td id="Saturday-1745"></td>
+              <td id="Saturday-1800"></td>
+              <td id="Saturday-1815"></td>
+              <td id="Saturday-1830"></td>
+              <td id="Saturday-1845"></td>
+              <td id="Saturday-1900"></td>
+              <td id="Saturday-1915"></td>
+              <td id="Saturday-1930"></td>
+              <td id="Saturday-1945"></td>
+              <td id="Saturday-2000"></td>
+              <td id="Saturday-2015"></td>
+              <td id="Saturday-2030"></td>
+              <td id="Saturday-2045"></td>
+              <td id="Saturday-2100"></td>
+              <td id="Saturday-2115"></td>
+              <td id="Saturday-2130"></td>
+              <td id="Saturday-2145"></td>
+              <td id="Saturday-2200"></td>
+              <td id="Saturday-2215"></td>
+              <td id="Saturday-2230"></td>
+              <td id="Saturday-2245"></td>
+              <td id="Saturday-2300"></td>
+            </tr>
+            <!-- Sunday Row -->
+            <tr>
+              <th class="day-header">Sunday</th>
+              <!-- Sunday Time Slots -->
+              <td id="Sunday-0900"></td>
+              <td id="Sunday-0915"></td>
+              <td id="Sunday-0930"></td>
+              <td id="Sunday-0945"></td>
+              <td id="Sunday-1000"></td>
+              <td id="Sunday-1015"></td>
+              <td id="Sunday-1030"></td>
+              <td id="Sunday-1045"></td>
+              <td id="Sunday-1100"></td>
+              <td id="Sunday-1115"></td>
+              <td id="Sunday-1130"></td>
+              <td id="Sunday-1145"></td>
+              <td id="Sunday-1200"></td>
+              <td id="Sunday-1215"></td>
+              <td id="Sunday-1230"></td>
+              <td id="Sunday-1245"></td>
+              <td id="Sunday-1300"></td>
+              <td id="Sunday-1315"></td>
+              <td id="Sunday-1330"></td>
+              <td id="Sunday-1345"></td>
+              <td id="Sunday-1400"></td>
+              <td id="Sunday-1415"></td>
+              <td id="Sunday-1430"></td>
+              <td id="Sunday-1445"></td>
+              <td id="Sunday-1500"></td>
+              <td id="Sunday-1515"></td>
+              <td id="Sunday-1530"></td>
+              <td id="Sunday-1545"></td>
+              <td id="Sunday-1600"></td>
+              <td id="Sunday-1615"></td>
+              <td id="Sunday-1630"></td>
+              <td id="Sunday-1645"></td>
+              <td id="Sunday-1700"></td>
+              <td id="Sunday-1715"></td>
+              <td id="Sunday-1730"></td>
+              <td id="Sunday-1745"></td>
+              <td id="Sunday-1800"></td>
+              <td id="Sunday-1815"></td>
+              <td id="Sunday-1830"></td>
+              <td id="Sunday-1845"></td>
+              <td id="Sunday-1900"></td>
+              <td id="Sunday-1915"></td>
+              <td id="Sunday-1930"></td>
+              <td id="Sunday-1945"></td>
+              <td id="Sunday-2000"></td>
+              <td id="Sunday-2015"></td>
+              <td id="Sunday-2030"></td>
+              <td id="Sunday-2045"></td>
+              <td id="Sunday-2100"></td>
+              <td id="Sunday-2115"></td>
+              <td id="Sunday-2130"></td>
+              <td id="Sunday-2145"></td>
+              <td id="Sunday-2200"></td>
+              <td id="Sunday-2215"></td>
+              <td id="Sunday-2230"></td>
+              <td id="Sunday-2245"></td>
+              <td id="Sunday-2300"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </body>
 </html>
