@@ -27,11 +27,115 @@
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script>
+      var tmp_chosen = [
+        "Uni and the Hunt for the Lost Horn",
+        "Ask A (Comics) Librarian!",
+        "HBO’s THE PENGUIN: Extended Sneak Peek and Conversations with Colin Farrell, Cast and Creatives",
+        "Totally Metal! Create Your Own Chainmail with Cowbutt Crunchies [Separately Ticketed]",
+        "Civics For All Comics Group Where We Are And Where We Are Going",
+        "The Accessibility Alliance: A Disability-Friendly Meetup",
+        "Marisa Tomei Autographing Session",
+        "Phil LaMarr Autographing Session",
+        "Denise Richards Autographing Session",
+        "Jason Mewes Autographing Session",
+        "Kevin Smith Autographing Session",
+        "Jason Lee Autographing Session",
+        "Top 5 Dead or Alive: LIVE!",
+        "Keep Bans Off Our Books",
+        "The Cast of Starship Troopers",
+        "Comics Unleashed: Transforming Education for Every Classroom",
+        "Saber Guild Adult Training [Sign-up Required]",
+        "Being Nimoy",
+        "Utilizing your Makerspace for Comic Con and Beyond",
+        "HBO’s DUNE: PROPHECY",
+        "Being Nimoy Post Panel Book Signing",
+        "Josh Brolin Autographing Session",
+        "Busted! Behind the Scenes with the creators of “Phineas and Ferb”",
+        "The Way of The Jedi: Lessons in Mindfulness",
+        "Pastoria City Trainer School - Pokémon Meetup",
+        "Netflix presents THE ELECTRIC STATE",
+        "Peacock Presents: Satanic Panic Horror Thriller Hysteria!",
+        "Making Queer Games and Making Games Queer",
+        "Pizza Rats vs. Bodega Cats!",
+        "Cosplay? Let’s Learn How To Crochet!!",
+        "“Outlander” Season Seven Part Two Preview",
+        "After 50 Years, Why Do Spidey Super Stories Comics Still Matter to Autistic Kids and Everybody Else?",
+        "Authors Reading Bad Reviews",
+        "Murder Mystery Party",
+        "Teenage Mutant Ninja Turtles: Video Games and Virtual Worlds",
+        "Walton Goggins Autographing Session",
+        "THE LORD OF THE RINGS: THE WAR OF THE ROHIRRIM",
+        "Celebrating Queer Joy in Media",
+        "Sewing with Electricity! hosted by Plexi Cosplay [Separately Ticketed]",
+        "Giant Japanese Calligraphy Performance by Taisan Tanaka",
+        "Comics Made Me Gay",
+        "Star Trek: Picard’s Todd Stashwick",
+        "Marvel Multiverse Role-Playing Game LIVE! Ft. Glass Cannon Network",
+        "Reclaiming Queer History Through Comics",
+        "NYCC Networking",
+        "Spotlight on Tegan and Sara with Tillie Walden",
+        "LUCASFILM PUBLISHING: Star Wars: Stories from a Galaxy Far, Far Away",
+        "Dominique Jackson Meet and Greet",
+        "What We Do in the Shadows (FX) - Moderated Q&A and Exclusive Advance Screening – THE BATS ARE BACK!",
+        "Tegan and Sara with Tillie Walden, Book Signing",
+        "Trans/Non-Binary Entertainment Panel",
+        "Fighting Comic Bans with the Comic Book Legal Defense Fund",
+        "Laugh-Out-Loud Sci-Fi Picture Books featuring Monster Ducks, Alien Dogs, and Cookie Time Traveling!",
+        "Todd McFarlane Talks Movies, Comics and Toys!",
+        "Wheelchair Cosplay: How To Make Accessible Builds For Cosplayers Living With Limited Mobility",
+        "Beyond the Binary: Interpretations of Gender in Cosplay with SHEPROP!",
+        "It's Never Too Late! Cosplaying for Older Fans",
+        "Cyanide & Happiness: Behind the Scenes",
+        "Which Cryptid Would Make the Best Boyfriend",
+        "Who is Amy Schneider",
+        "LGBTQIA+ Romances in Science Fiction and Fantasy",
+        "Hugh Dancy Autographing Session",
+        "Jodie Whittaker Autographing Session",
+        "Mads Mikkelsen Autographing Session",
+        "The Simpsons",
+        "Drag Queen Panel",
+        "Conversation with the King: Activism and Afro-Futurism with Atandwa Kani",
+        "Viva La Dirt League - Epic NPC Man!",
+        "Drag Panel Merch Sales",
+        "Matt Smith Autographing Session",
+        "Star Trek Universe",
+        "Nintendo Switch Friend Code Meetup",
+        "Oracle of Aces: Bridging asexual, agender & aromantic spectrum identities throughout gaming communities",
+        "The George Lucas Talk Show",
+        "GHOSTS",
+        "Let's Learn UV Resin: Create your Own Jewelry and Gems with Cowbutt Crunchies [Separately Ticketed]",
+        "Godzilla vs NYCC: 70 Years of the King of the Monsters",
+        "Pokémon Ecology Academy: Pokémonology 101",
+        "(18+) Jackbox After Dark",
+        "(18+) Cyanide & Happiness: After Hours",
+        "Futurama",
+        "Women in Comics: The Empowerment Era",
+        "The Frights and Delights of Queer Horror Comics",
+        "Drag Queen Story Hour",
+        "Popversus: Star Wars vs. Star Trek",
+        "YAS KIDS; Celebrating Queer & Diverse Middle Grade/YA Stories",
+        "Jackbox Party Hour",
+        "NYCC 90s Trivia",
+      ];
       var DateTime = luxon.DateTime;
       var schedules;
       var panelnames = [];
       var panels = [];
       var calendar = [];
+
+      function load_my_stuff() {
+        $.each(panels, function (index, panel) {
+          if (tmp_chosen.includes(panel.title)) {
+            panel.status = "chosen";
+          } else {
+            panel.status = "rejected";
+          }
+        });
+        render_stage();
+        render_chosen();
+        render_rejected();
+        render_calendar();
+      }
 
       function remove_from_calendar(id) {
         var del_index = -1;
