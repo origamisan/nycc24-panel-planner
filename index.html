@@ -19,6 +19,7 @@
         border: 2px solid blue;
         margin: 5px;
       }
+
       .instance {
         border: 1px solid black;
         margin: 5px;
@@ -32,6 +33,18 @@
       var panels = [];
       var calendar = [];
 
+      function remove_from_calendar(id) {
+        var del_index = -1;
+        $.each(calendar, function (index, entry) {
+          //console.log(entry.id + ":" + id);
+          if (entry.id == id) {
+            alert(index);
+            del_index = index;
+          }
+        });
+        calendar.splice(del_index, 1);
+      }
+
       function time_available(tmpcal) {
         valid = true;
         var tmp_start = DateTime.fromISO(tmpcal.start_time);
@@ -39,8 +52,11 @@
         $.each(calendar, function (index, entry) {
           var e_start = DateTime.fromISO(entry.start_time);
           var e_end = DateTime.fromISO(entry.end_time);
-          console.log(e_start);
-          console.log(tmp_start);
+          //console.log(e_start);
+          //console.log(tmp_start);
+          if (tmpcal.id == entry.id) {
+            valid = false;
+          }
           if (tmp_start >= e_start && tmp_start < e_end) {
             valid = false;
           }
@@ -52,9 +68,51 @@
       }
 
       function add_to_calendar(tmpcal) {
-        alert(time_available(tmpcal));
-        calendar.push(tmpcal);
-        localStorage.setItem("calendar", JSON.stringify(calendar));
+        var added = false;
+        if (time_available(tmpcal)) {
+          calendar.push(tmpcal);
+          calendar.sort(function (a, b) {
+            return new Date(a.start_time) - new Date(b.start_time);
+          });
+          localStorage.setItem("calendar", JSON.stringify(calendar));
+          render_calendar();
+          added = true;
+        } else {
+          alert("Failed to Add. Check date and time");
+        }
+        return added;
+      }
+
+      function render_calendar() {
+        $("#Thursday").html("");
+        $("#Friday").html("");
+        $("#Saturday").html("");
+        $("#Sunday").html("");
+        $.each(calendar, function (index, calitem) {
+          var html =
+            '<div class="card" style="margin-bottom:5px;">' +
+            '<div class="card-body">' +
+            '<strong class="card-title">' +
+            DateTime.fromISO(calitem.start_time).toFormat("hh:mm a") +
+            " - " +
+            DateTime.fromISO(calitem.end_time).toFormat("hh:mm a") +
+            "</strong>" +
+            '<p class="card-text">(' +
+            calitem.location +
+            ")</p>" +
+            '<p class="card-text">' +
+            calitem.title +
+            "</p>" +
+            "<button class='btn btn-danger btn-sm remove' data-id='" +
+            calitem.id +
+            "'>remove</button>";
+          "</div>" + "</div >";
+          //alert(DateTime.fromISO(calitem.start_time).weekdayLong);
+          $("#" + DateTime.fromISO(calitem.start_time).weekdayLong).append(
+            html
+          );
+          //console.log(calitem);
+        });
       }
 
       function render_stage() {
@@ -97,6 +155,7 @@
       }
 
       function render_chosen() {
+        $("#chosen").html("");
         $.each(panels, function (index, panel) {
           if (panel.status === "chosen") {
             var html = "";
@@ -147,6 +206,7 @@
       }
 
       function render_rejected() {
+        $("#rejected").html("");
         $.each(panels, function (index, panel) {
           if (panel.status === "rejected") {
             var html = "";
@@ -193,6 +253,7 @@
           render_stage();
           render_chosen();
           render_rejected();
+          render_calendar();
         } else {
           $.getJSON(
             "https://register.growtix.com/api/schedules?key=0a00c84d-7546-45e1-a596-96594b5cc463",
@@ -235,7 +296,7 @@
                 }
                 //console.log(panels.indexOf(panel.title));
               });
-              console.log(panels);
+              //console.log(panels);
               localStorage.setItem("panels", JSON.stringify(panels));
               render_stage();
             }
@@ -260,16 +321,18 @@
           localStorage.setItem("panels", JSON.stringify(panels));
         });
         $("#chosen").on("click", ".instance", function (e) {
-          console.log($(this));
+          //console.log($(this));
           var tmpcal = {};
+          tmpcal.index = calendar.length;
           tmpcal.start_time = $(this).attr("data-start");
           tmpcal.end_time = $(this).attr("data-end");
           tmpcal.id = $(this).attr("data-id");
           tmpcal.location = $(this).attr("data-location");
-          tmpcal.title = $(this).attr("title");
-          $(this).removeClass("btn-outline-info");
-          $(this).addClass("btn-success");
-          add_to_calendar(tmpcal);
+          tmpcal.title = $(this).attr("data-title");
+          if (add_to_calendar(tmpcal)) {
+            $(this).removeClass("btn-outline-info");
+            $(this).addClass("btn-success");
+          }
         });
         $("#rejected").on("click", ".unreject", function (e) {
           panels[$(this).attr("data-index")].status = "eval";
@@ -277,81 +340,121 @@
           render_stage();
           localStorage.setItem("panels", JSON.stringify(panels));
         });
+        $("#cal").on("click", ".remove", function (e) {
+          remove_from_calendar($(this).attr("data-id"));
+          // calendar.splice($(this).attr("data-index"), 1);
+          render_calendar();
+          //alert($(this).attr("data-index"));
+        });
       });
     </script>
   </head>
+
   <body>
     <div class="container-fluid">
-      <div class="accordion" id="accordionExample">
-        <div class="accordion-item" style="background-color: #aae">
-          <h2 class="accordion-header">
-            <button
-              class="accordion-button"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#collapseOne"
-              aria-expanded="true"
-              aria-controls="collapseOne"
-              style="background-color: #aae"
-            >
-              Panels
-            </button>
-          </h2>
-          <div
-            id="collapseOne"
-            class="accordion-collapse collapse show"
-            data-bs-parent="#accordionExample"
-          >
-            <div class="accordion-body">
-              <div id="stage"></div>
+      <div class="row">
+        <div class="col-8">
+          <div class="accordion" id="accordionExample">
+            <div class="accordion-item" style="background-color: #aae">
+              <h2 class="accordion-header">
+                <button
+                  class="accordion-button"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapseOne"
+                  aria-expanded="true"
+                  aria-controls="collapseOne"
+                  style="background-color: #aae"
+                >
+                  Panels
+                </button>
+              </h2>
+              <div
+                id="collapseOne"
+                class="accordion-collapse collapse show"
+                data-bs-parent="#accordionExample"
+              >
+                <div class="accordion-body">
+                  <div id="stage"></div>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item" style="background-color: #e88">
+              <h2 class="accordion-header">
+                <button
+                  class="accordion-button collapsed"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapseTwo"
+                  aria-expanded="false"
+                  aria-controls="collapseTwo"
+                  style="background-color: #e88"
+                >
+                  Rejected
+                </button>
+              </h2>
+              <div
+                id="collapseTwo"
+                class="accordion-collapse collapse"
+                data-bs-parent="#accordionExample"
+              >
+                <div class="accordion-body">
+                  <div id="rejected"></div>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item" style="background-color: #aea">
+              <h2 class="accordion-header">
+                <button
+                  class="accordion-button collapsed"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#collapseThree"
+                  aria-expanded="false"
+                  aria-controls="collapseThree"
+                  style="background-color: #aea"
+                >
+                  Chosen
+                </button>
+              </h2>
+              <div
+                id="collapseThree"
+                class="accordion-collapse collapse"
+                data-bs-parent="#accordionExample"
+              >
+                <div class="accordion-body">
+                  <div id="chosen"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="accordion-item" style="background-color: #e88">
-          <h2 class="accordion-header">
-            <button
-              class="accordion-button collapsed"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#collapseTwo"
-              aria-expanded="false"
-              aria-controls="collapseTwo"
-              style="background-color: #e88"
-            >
-              Rejected
-            </button>
-          </h2>
-          <div
-            id="collapseTwo"
-            class="accordion-collapse collapse"
-            data-bs-parent="#accordionExample"
-          >
-            <div class="accordion-body">
-              <div id="rejected"></div>
+        <div class="col-4">
+          <div id="cal" style="background-color: #aaa; padding: 10px">
+            <h4>Itinerary</h4>
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Thursday</h5>
+                <div id="Thursday"></div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div class="accordion-item" style="background-color: #aea">
-          <h2 class="accordion-header">
-            <button
-              class="accordion-button collapsed"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#collapseThree"
-              aria-expanded="false"
-              aria-controls="collapseThree"
-              style="background-color: #aea"
-            >
-              Chosen
-            </button>
-          </h2>
-          <div
-            id="collapseThree"
-            class="accordion-collapse collapse"
-            data-bs-parent="#accordionExample"
-          >
-            <div class="accordion-body">
-              <div id="chosen"></div>
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Friday</h5>
+                <div id="Friday"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Saturday</h5>
+                <div id="Saturday"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Sunday</h5>
+                <div id="Sunday"></div>
+              </div>
             </div>
           </div>
         </div>
