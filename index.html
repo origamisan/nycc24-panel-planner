@@ -121,6 +121,20 @@
       var panelnames = [];
       var panels = [];
       var calendar = [];
+      var locations = [];
+      var tags = [];
+      var days = ["Thursday", "Friday", "Saturday", "Sunday"];
+
+      function instance_in_calendar(id) {
+        var in_cal = false;
+        console.log(id);
+        $.each(calendar, function (index, entry) {
+          if (entry.id == id) {
+            in_cal = true;
+          }
+        });
+        return in_cal;
+      }
 
       function load_my_stuff() {
         $.each(panels, function (index, panel) {
@@ -141,11 +155,11 @@
         $.each(calendar, function (index, entry) {
           //console.log(entry.id + ":" + id);
           if (entry.id == id) {
-            alert(index);
             del_index = index;
           }
         });
         calendar.splice(del_index, 1);
+        localStorage.setItem("calendar", JSON.stringify(calendar));
       }
 
       function time_available(tmpcal) {
@@ -179,6 +193,7 @@
           });
           localStorage.setItem("calendar", JSON.stringify(calendar));
           render_calendar();
+          render_chosen();
           added = true;
         } else {
           alert("Failed to Add. Check date and time");
@@ -280,8 +295,25 @@
               "</p>";
 
             $.each(panel.instances, function (index, instance) {
+              var buttonclass = "";
+              var tmpcal = {};
+              tmpcal.start_time = instance.start_time.replace(" ", "T");
+              tmpcal.end_time = instance.end_time.replace(" ", "T");
+              tmpcal.id = instance.index;
+              tmpcal.location = instance.location;
+              tmpcal.title = instance.title;
+              if (time_available(tmpcal)) {
+                buttonclass = "btn-outline-info";
+              } else {
+                buttonclass = "btn-danger";
+              }
+              if (instance_in_calendar(panel.index + "-" + instance.index)) {
+                buttonclass = "btn-success";
+              }
               html +=
-                "<div class='btn btn-outline-info instance' data-id='" +
+                "<div class='btn " +
+                buttonclass +
+                " instance' data-id='" +
                 panel.index +
                 "-" +
                 instance.index +
@@ -366,38 +398,43 @@
               );
               var tmppanel = {};
               $.each(schedules, function (index, panel) {
-                if (panelnames.indexOf(panel.title) == -1) {
-                  if (
-                    Object.entries(tmppanel).length === 0 &&
-                    panels.length === 0
-                  ) {
-                    console.log("Starting Panel Ingest");
+                if (
+                  panel.location == "Main Stage" ||
+                  panel.location == "Empire Stage"
+                ) {
+                  if (panelnames.indexOf(panel.title) == -1) {
+                    if (
+                      Object.entries(tmppanel).length === 0 &&
+                      panels.length === 0
+                    ) {
+                      console.log("Starting Panel Ingest");
+                    } else {
+                      panels.push(tmppanel);
+                      tmppanel = {};
+                    }
+                    panelnames.push(panel.title);
+                    tmppanel.index = panels.length;
+                    tmppanel.status = "eval";
+                    tmppanel.title = panel.title;
+                    tmppanel.description = panel.description;
+                    tmppanel.instances = [];
+                    var tmpinstance = {};
+                    tmpinstance.index = 0;
+                    tmpinstance.start_time = panel.start_time;
+                    tmpinstance.end_time = panel.end_time;
+                    tmpinstance.location = panel.location;
+                    tmppanel.instances.push(tmpinstance);
+                    // create the panel
                   } else {
-                    panels.push(tmppanel);
-                    tmppanel = {};
+                    var tmpinstance = {};
+                    tmpinstance.index = tmppanel.instances.length;
+                    tmpinstance.start_time = panel.start_time;
+                    tmpinstance.end_time = panel.end_time;
+                    tmpinstance.location = panel.location;
+                    tmppanel.instances.push(tmpinstance);
                   }
-                  panelnames.push(panel.title);
-                  tmppanel.index = panels.length;
-                  tmppanel.status = "eval";
-                  tmppanel.title = panel.title;
-                  tmppanel.description = panel.description;
-                  tmppanel.instances = [];
-                  var tmpinstance = {};
-                  tmpinstance.index = 0;
-                  tmpinstance.start_time = panel.start_time;
-                  tmpinstance.end_time = panel.end_time;
-                  tmpinstance.location = panel.location;
-                  tmppanel.instances.push(tmpinstance);
-                  // create the panel
-                } else {
-                  var tmpinstance = {};
-                  tmpinstance.index = tmppanel.instances.length;
-                  tmpinstance.start_time = panel.start_time;
-                  tmpinstance.end_time = panel.end_time;
-                  tmpinstance.location = panel.location;
-                  tmppanel.instances.push(tmpinstance);
+                  //console.log(panels.indexOf(panel.title));
                 }
-                //console.log(panels.indexOf(panel.title));
               });
               //console.log(panels);
               localStorage.setItem("panels", JSON.stringify(panels));
@@ -445,9 +482,16 @@
         });
         $("#cal").on("click", ".remove", function (e) {
           remove_from_calendar($(this).attr("data-id"));
-          // calendar.splice($(this).attr("data-index"), 1);
+          $("#chosen [data-id='" + $(this).attr("data-id") + "']").removeClass(
+            "btn-success"
+          );
+          $("#chosen [data-id='" + $(this).attr("data-id") + "']").removeClass(
+            "btn-danger"
+          );
+          $("#chosen [data-id='" + $(this).attr("data-id") + "']").addClass(
+            "btn-outline-info"
+          );
           render_calendar();
-          //alert($(this).attr("data-index"));
         });
       });
     </script>
@@ -537,25 +581,25 @@
             <h4>Itinerary</h4>
             <div class="card">
               <div class="card-body">
-                <h5 class="card-title">Thursday</h5>
+                <h5 class="card-title">Thursday (10-17)</h5>
                 <div id="Thursday"></div>
               </div>
             </div>
             <div class="card">
               <div class="card-body">
-                <h5 class="card-title">Friday</h5>
+                <h5 class="card-title">Friday (10-18)</h5>
                 <div id="Friday"></div>
               </div>
             </div>
             <div class="card">
               <div class="card-body">
-                <h5 class="card-title">Saturday</h5>
+                <h5 class="card-title">Saturday (10-19)</h5>
                 <div id="Saturday"></div>
               </div>
             </div>
             <div class="card">
               <div class="card-body">
-                <h5 class="card-title">Sunday</h5>
+                <h5 class="card-title">Sunday (10-20)</h5>
                 <div id="Sunday"></div>
               </div>
             </div>
