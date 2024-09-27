@@ -398,43 +398,43 @@
               );
               var tmppanel = {};
               $.each(schedules, function (index, panel) {
-                if (
-                  panel.location == "Main Stage" ||
-                  panel.location == "Empire Stage"
-                ) {
-                  if (panelnames.indexOf(panel.title) == -1) {
-                    if (
-                      Object.entries(tmppanel).length === 0 &&
-                      panels.length === 0
-                    ) {
-                      console.log("Starting Panel Ingest");
-                    } else {
-                      panels.push(tmppanel);
-                      tmppanel = {};
-                    }
-                    panelnames.push(panel.title);
-                    tmppanel.index = panels.length;
-                    tmppanel.status = "eval";
-                    tmppanel.title = panel.title;
-                    tmppanel.description = panel.description;
-                    tmppanel.instances = [];
-                    var tmpinstance = {};
-                    tmpinstance.index = 0;
-                    tmpinstance.start_time = panel.start_time;
-                    tmpinstance.end_time = panel.end_time;
-                    tmpinstance.location = panel.location;
-                    tmppanel.instances.push(tmpinstance);
-                    // create the panel
+                // if (
+                //   panel.location == "Main Stage" ||
+                //   panel.location == "Empire Stage"
+                // ) {
+                if (panelnames.indexOf(panel.title) == -1) {
+                  if (
+                    Object.entries(tmppanel).length === 0 &&
+                    panels.length === 0
+                  ) {
+                    console.log("Starting Panel Ingest");
                   } else {
-                    var tmpinstance = {};
-                    tmpinstance.index = tmppanel.instances.length;
-                    tmpinstance.start_time = panel.start_time;
-                    tmpinstance.end_time = panel.end_time;
-                    tmpinstance.location = panel.location;
-                    tmppanel.instances.push(tmpinstance);
+                    panels.push(tmppanel);
+                    tmppanel = {};
                   }
-                  //console.log(panels.indexOf(panel.title));
+                  panelnames.push(panel.title);
+                  tmppanel.index = panels.length;
+                  tmppanel.status = "eval";
+                  tmppanel.title = panel.title;
+                  tmppanel.description = panel.description;
+                  tmppanel.instances = [];
+                  var tmpinstance = {};
+                  tmpinstance.index = 0;
+                  tmpinstance.start_time = panel.start_time;
+                  tmpinstance.end_time = panel.end_time;
+                  tmpinstance.location = panel.location;
+                  tmppanel.instances.push(tmpinstance);
+                  // create the panel
+                } else {
+                  var tmpinstance = {};
+                  tmpinstance.index = tmppanel.instances.length;
+                  tmpinstance.start_time = panel.start_time;
+                  tmpinstance.end_time = panel.end_time;
+                  tmpinstance.location = panel.location;
+                  tmppanel.instances.push(tmpinstance);
                 }
+                //console.log(panels.indexOf(panel.title));
+                // }
               });
               //console.log(panels);
               localStorage.setItem("panels", JSON.stringify(panels));
